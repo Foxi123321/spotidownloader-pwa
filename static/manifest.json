@@ -1,0 +1,34 @@
+{
+  "name": "SpotiDownloader",
+  "short_name": "SpotiDown",
+  "description": "Download Spotify tracks with FLAC support",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#1DB954",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Quick Download",
+      "short_name": "Download",
+      "description": "Start a new download",
+      "url": "/?action=download",
+      "icons": [{ "src": "/static/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

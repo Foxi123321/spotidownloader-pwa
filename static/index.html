@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpotiDownloader</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <meta name="theme-color" content="#1DB954">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; min-height: 100vh; padding: 20px;
+        }
+        .container { max-width: 400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { opacity: 0.8; font-size: 1.1em; }
+        .card { 
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input, select { 
+            width: 100%; padding: 12px; border-radius: 10px; border: none;
+            background: rgba(255,255,255,0.9); font-size: 16px;
+        }
+        .btn { 
+            width: 100%; padding: 15px; border: none; border-radius: 10px;
+            background: linear-gradient(45deg, #1DB954, #1ed760); color: white;
+            font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); transition: 0.3s; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .progress { 
+            width: 100%; height: 8px; background: rgba(255,255,255,0.3);
+            border-radius: 4px; overflow: hidden; margin: 10px 0;
+        }
+        .progress-bar { 
+            height: 100%; background: linear-gradient(45deg, #1DB954, #1ed760);
+            width: 0%; transition: width 0.3s;
+        }
+        .status { 
+            text-align: center; padding: 10px; border-radius: 10px;
+            margin: 10px 0; font-size: 14px;
+        }
+        .status.success { background: rgba(29, 185, 84, 0.2); }
+        .status.error { background: rgba(231, 76, 60, 0.2); }
+        .status.info { background: rgba(52, 152, 219, 0.2); }
+        .hidden { display: none; }
+        .job-info { margin-top: 15px; }
+        .job-info div { margin: 5px 0; }
+        .settings { margin-top: 20px; }
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { 
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.3); transition: .4s; border-radius: 34px;
+        }
+        .slider:before { 
+            position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #1DB954; }
+        input:checked + .slider:before { transform: translateX(26px); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎵</div>
+            <h1>SpotiDownloader</h1>
+            <p class="subtitle">Download Spotify tracks with FLAC support</p>
+        </div>
+        
+        <div class="card">
+            <div class="input-group">
+                <label for="spotifyUrl">Spotify URL</label>
+                <input type="url" id="spotifyUrl" placeholder="https://open.spotify.com/track/..." />
+            </div>
+            
+            <div class="input-group">
+                <label for="filenameFormat">Filename Format</label>
+                <select id="filenameFormat">
+                    <option value="title_artist">Track - Artist</option>
+                    <option value="artist_title">Artist - Track</option>
+                    <option value="title_only">Track Only</option>
+                </select>
+            </div>
+            
+            <div class="settings">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+                    <label>Prefer FLAC Quality</label>
+                    <label class="switch">
+                        <input type="checkbox" id="preferFlac">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+                    <label>Use Track Numbers</label>
+                    <label class="switch">
+                        <input type="checkbox" id="useTrackNumbers" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="btn" id="downloadBtn" onclick="startDownload()">🚀 Start Download</button>
+            <button class="btn" id="metadataBtn" onclick="getMetadata()" style="background: linear-gradient(45deg, #667eea, #764ba2);">📋 Get Info</button>
+        </div>
+        
+        <div class="card hidden" id="progressCard">
+            <div class="status info" id="statusText">Preparing download...</div>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="job-info" id="jobInfo"></div>
+            <button class="btn" onclick="cancelDownload()" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">⏹️ Cancel</button>
+        </div>
+        
+        <div class="card hidden" id="resultCard">
+            <div id="resultContent"></div>
+            <button class="btn" onclick="resetForm()">🔄 Download Another</button>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        let progressInterval = null;
+        const API_BASE = window.location.origin;
+
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options
+                });
+                return await response.json();
+            } catch (error) {
+                throw new Error(`Network error: ${error.message}`);
+            }
+        }
+
+        async function getMetadata() {
+            const url = document.getElementById('spotifyUrl').value.trim();
+            if (!url) {
+                showStatus('Please enter a Spotify URL', 'error');
+                return;
+            }
+
+            showStatus('Getting track info...', 'info');
+            try {
+                const metadata = await apiCall('/metadata', {
+                    method: 'POST',
+                    params: new URLSearchParams({ spotify_url: url })
+                });
+                
+                showStatus(`Found: ${metadata.name} by ${metadata.artist || 'Unknown'}\\n${metadata.total_tracks} track(s)`, 'success');
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function startDownload() {
+            const url = document.getElementById('spotifyUrl').value.trim();
+            if (!url) {
+                showStatus('Please enter a Spotify URL', 'error');
+                return;
+            }
+
+            const payload = {
+                spotify_url: url,
+                output_path: '/downloads',
+                prefer_flac: document.getElementById('preferFlac').checked,
+                filename_format: document.getElementById('filenameFormat').value,
+                use_track_numbers: document.getElementById('useTrackNumbers').checked
+            };
+
+            showProgressCard();
+            showStatus('Starting download...', 'info');
+
+            try {
+                const result = await apiCall('/download', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                currentJobId = result.job_id;
+                showStatus(result.message, 'success');
+                startProgressMonitoring();
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                hideProgressCard();
+            }
+        }
+
+        function startProgressMonitoring() {
+            if (!currentJobId) return;
+            
+            progressInterval = setInterval(async () => {
+                try {
+                    const status = await apiCall(`/job/${currentJobId}`);
+                    updateProgress(status);
+                    
+                    if (status.status === 'completed' || status.status === 'failed') {
+                        clearInterval(progressInterval);
+                        showResult(status);
+                    }
+                } catch (error) {
+                    clearInterval(progressInterval);
+                    showStatus(`Monitoring error: ${error.message}`, 'error');
+                }
+            }, 2000);
+        }
+
+        function updateProgress(status) {
+            document.getElementById('progressBar').style.width = `${status.progress}%`;
+            
+            let statusText = `${status.status.toUpperCase()} - ${status.progress}%`;
+            if (status.current_track) {
+                statusText += `\\nCurrent: ${status.current_track}`;
+            }
+            
+            document.getElementById('statusText').textContent = statusText;
+            document.getElementById('statusText').className = `status ${status.status === 'failed' ? 'error' : 'info'}`;
+            
+            document.getElementById('jobInfo').innerHTML = `
+                <div>📊 Progress: ${status.completed_tracks + status.failed_tracks + status.skipped_tracks}/${status.total_tracks}</div>
+                <div>✅ Completed: ${status.completed_tracks}</div>
+                <div>❌ Failed: ${status.failed_tracks}</div>
+                <div>⏭️ Skipped: ${status.skipped_tracks}</div>
+            `;
+        }
+
+        function showResult(status) {
+            hideProgressCard();
+            
+            let resultHTML = '';
+            if (status.status === 'completed') {
+                resultHTML = `
+                    <div class="status success">
+                        <h3>🎉 Download Complete!</h3>
+                        <p>Successfully downloaded ${status.completed_tracks} tracks</p>
+                        ${status.failed_tracks > 0 ? `<p>Failed: ${status.failed_tracks} tracks</p>` : ''}
+                        ${status.skipped_tracks > 0 ? `<p>Skipped: ${status.skipped_tracks} tracks</p>` : ''}
+                        <button class="btn" onclick="downloadToDevice('${status.job_id}')" style="background: linear-gradient(45deg, #1DB954, #1ed760); margin-top: 15px;">
+                            📱 Download to Device
+                        </button>
+                    </div>
+                `;
+            } else {
+                resultHTML = `
+                    <div class="status error">
+                        <h3>❌ Download Failed</h3>
+                        <p>${status.error_message || 'Unknown error occurred'}</p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('resultContent').innerHTML = resultHTML;
+            document.getElementById('resultCard').classList.remove('hidden');
+        }
+
+        async function downloadToDevice(jobId) {
+            try {
+                showStatus('Preparing download...', 'info');
+                
+                // Create a download link that triggers the browser's download
+                const downloadUrl = `${API_BASE}/download-files/${jobId}`;
+                
+                // For mobile devices, we need to handle this differently
+                if (navigator.userAgent.match(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile/)) {
+                    // Mobile: Open download in new window/tab
+                    window.open(downloadUrl, '_blank');
+                } else {
+                    // Desktop: Use fetch and blob for direct download
+                    const response = await fetch(downloadUrl);
+                    if (!response.ok) {
+                        throw new Error(`Download failed: ${response.statusText}`);
+                    }
+                    
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `spotify_download_${jobId.substring(0, 8)}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }
+                
+                showStatus('Download started! Check your downloads folder.', 'success');
+                
+            } catch (error) {
+                showStatus(`Download error: ${error.message}`, 'error');
+            }
+        }
+
+        async function cancelDownload() {
+            if (!currentJobId) return;
+            
+            try {
+                await apiCall(`/job/${currentJobId}`, { method: 'DELETE' });
+                clearInterval(progressInterval);
+                showStatus('Download cancelled', 'error');
+                hideProgressCard();
+            } catch (error) {
+                showStatus(`Cancel error: ${error.message}`, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusElements = document.querySelectorAll('.status');
+            statusElements.forEach(el => {
+                el.textContent = message;
+                el.className = `status ${type}`;
+                el.classList.remove('hidden');
+            });
+        }
+
+        function showProgressCard() {
+            document.getElementById('progressCard').classList.remove('hidden');
+            document.getElementById('resultCard').classList.add('hidden');
+        }
+
+        function hideProgressCard() {
+            document.getElementById('progressCard').classList.add('hidden');
+        }
+
+        function resetForm() {
+            document.getElementById('resultCard').classList.add('hidden');
+            document.getElementById('spotifyUrl').value = '';
+            currentJobId = null;
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+
+        // Install PWA prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            const installBtn = document.createElement('button');
+            installBtn.className = 'btn';
+            installBtn.innerHTML = '📱 Install App';
+            installBtn.onclick = () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                    installBtn.remove();
+                });
+            };
+            document.querySelector('.container').appendChild(installBtn);
+        });
+    </script>
+</body>
+</html>

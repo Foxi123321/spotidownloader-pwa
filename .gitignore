@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# Downloads folder (gets created at runtime)
+test_downloads/
+
+# Temporary files
+tmp_*
+
+# Large bundle files (not needed for web server)
+SpotiDownloader-Bundle/
+SpotiDownloader-v5.5-FLAC-Bundle/
+*.zip
+*.exe
+build_temp/
