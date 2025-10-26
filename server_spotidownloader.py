@@ -19,7 +19,10 @@ from api_models import (
 from job_manager import job_manager
 from download_service import download_service
 from getMetadata import get_filtered_data, parse_uri, SpotifyInvalidUrlException
-from getToken import get_token
+try:
+    from getToken_server import get_token
+except ImportError:
+    from getToken import get_token
 from error_translator import format_error_for_display
 
 # Setup logging
