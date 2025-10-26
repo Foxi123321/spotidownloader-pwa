@@ -6,3 +6,5 @@ mutagen>=1.47.0
 packaging>=23.0
 aiofiles>=23.0.0
 python-multipart>=0.0.6
+pyotp>=2.8.0
+DrissionPage>=4.0.0
