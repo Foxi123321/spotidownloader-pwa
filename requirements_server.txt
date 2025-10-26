@@ -8,3 +8,4 @@ aiofiles>=23.0.0
 python-multipart>=0.0.6
 pyotp>=2.8.0
 DrissionPage>=4.0.0
+cloudscraper>=1.2.71
